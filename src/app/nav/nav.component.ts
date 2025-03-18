@@ -1,15 +1,31 @@
 import {Component, OnInit} from '@angular/core';
 import {ModalService} from '../services/modal.service';
+import {AuthService} from '../services/auth.service';
+import {AsyncPipe, NgIf} from '@angular/common';
 
 @Component({
   selector: 'app-nav',
-  imports: [],
+  imports: [
+    NgIf,
+    AsyncPipe
+  ],
   templateUrl: './nav.component.html',
   styleUrl: './nav.component.css'
 })
 export class NavComponent implements OnInit {
 
-  constructor(public modal: ModalService) { }
+  public isUserLoggedIn = false;
+
+  constructor(
+    public _modal: ModalService,
+    public _auth: AuthService,
+  ) {
+    this._auth.user$.subscribe(user => {
+      if (user) {
+        this.isUserLoggedIn = true;
+      }
+    })
+  }
 
   ngOnInit(): void {
 
@@ -18,7 +34,7 @@ export class NavComponent implements OnInit {
   openModal(event: Event) {
     event.preventDefault();
 
-    this.modal.toggleModal('auth');
+    this._modal.toggleModal('auth');
   }
 
 }
