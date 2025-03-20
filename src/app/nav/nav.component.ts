@@ -2,6 +2,8 @@ import {Component, OnInit} from '@angular/core';
 import {ModalService} from '../services/modal.service';
 import {AuthService} from '../services/auth.service';
 import {AsyncPipe, NgIf} from '@angular/common';
+import { signOut } from '@angular/fire/auth';
+import { Auth } from '@angular/fire/auth';
 
 @Component({
   selector: 'app-nav',
@@ -19,22 +21,20 @@ export class NavComponent implements OnInit {
   constructor(
     public _modal: ModalService,
     public _auth: AuthService,
-  ) {
-    this._auth.user$.subscribe(user => {
-      if (user) {
-        this.isUserLoggedIn = true;
-      }
-    })
-  }
+    public _signOut: Auth,
+  ) {}
 
-  ngOnInit(): void {
-
-  }
+  ngOnInit(): void {}
 
   openModal(event: Event) {
     event.preventDefault();
 
     this._modal.toggleModal('auth');
+  }
+
+  async logout($event: Event) {
+    $event.preventDefault();
+    await signOut(this._signOut);
   }
 
 }

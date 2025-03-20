@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import {FormGroup, NgForm} from '@angular/forms';
+import {Subject} from 'rxjs';
 
 interface IModal {
   id: string;
@@ -9,7 +11,16 @@ interface IModal {
   providedIn: 'root'
 })
 export class ModalService {
+
+  private _resetFormSubject = new Subject<void>();
   private modals: IModal[] = [];
+
+  public registerForm!: FormGroup;
+  public credentials= {
+    email: '',
+    password: ''
+  };
+  public resetForm$ = this._resetFormSubject.asObservable();
 
   constructor() { }
 
@@ -36,6 +47,10 @@ export class ModalService {
     this.modals = this.modals.filter(
       el => el.id !== id
     );
+  }
+
+  triggerLoginResetForm(): void {
+    this._resetFormSubject.next();
   }
 
 }

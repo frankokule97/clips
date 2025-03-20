@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import {Firestore, setDoc, doc} from '@angular/fire/firestore'; //using this instead of /compat... (it was causing inject() error)
+import { Firestore, setDoc, doc } from '@angular/fire/firestore'; //using this instead of /compat... (it was causing inject() error)
 import {Auth, createUserWithEmailAndPassword, onAuthStateChanged} from '@angular/fire/auth'; //using this instead of /compat... (it was causing inject() error)
 import IUser from '../models/user.model';
-import { updateProfile} from '@angular/fire/auth';
-import {BehaviorSubject} from 'rxjs';
+import { updateProfile } from '@angular/fire/auth';
+import {BehaviorSubject, delay, Observable} from 'rxjs';
 import { User } from 'firebase/auth'
 
 @Injectable({
@@ -17,15 +17,18 @@ export class AuthService {
 
   private _user= new BehaviorSubject<User | null | undefined>(undefined);
   public user$ = this._user.asObservable();
+  public isAuthenticatedWithDelay$: Observable<any>;
 
   constructor(
     private _auth: Auth,
     private _db: Firestore
   ) {
-
     onAuthStateChanged(this._auth, (user) => {
        this._user.next(user);
     });
+    this.isAuthenticatedWithDelay$ = this.user$.pipe(
+      delay(1000)
+    )
   }
 
   public async createUser(userData: IUser) {

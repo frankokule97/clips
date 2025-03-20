@@ -1,4 +1,4 @@
-import {Component, Input, OnInit, ElementRef, Inject, PLATFORM_ID} from '@angular/core';
+import {Component, Input, OnInit, ElementRef, Inject, PLATFORM_ID, OnDestroy} from '@angular/core';
 import {ModalService} from '../../services/modal.service';
 import {NgClass, isPlatformBrowser} from '@angular/common';
 
@@ -10,20 +10,28 @@ import {NgClass, isPlatformBrowser} from '@angular/common';
   templateUrl: './modal.component.html',
   styleUrl: './modal.component.css'
 })
-export class ModalComponent implements OnInit {
+export class ModalComponent implements OnInit, OnDestroy {
   @Input() modalID = ''
 
-  constructor(public modal: ModalService, public el: ElementRef, @Inject(PLATFORM_ID) private platformId: object) {
+  constructor(public _modal: ModalService, public _el: ElementRef, @Inject(PLATFORM_ID) private _platformId: object) {
   }
 
   ngOnInit() {
-    if (isPlatformBrowser(this.platformId)) {
-      document.body.appendChild(this.el.nativeElement);
+    if (isPlatformBrowser(this._platformId)) {
+      document.body.appendChild(this._el.nativeElement);
+    }
+  }
+
+  ngOnDestroy() {
+    if (isPlatformBrowser(this._platformId)) {
+      document.body.removeChild(this._el.nativeElement);
     }
   }
 
   closeModal() {
-    this.modal.toggleModal(this.modalID);
+    this._modal.toggleModal(this.modalID);
+    this._modal.registerForm.reset();
+    this._modal.triggerLoginResetForm();
   }
 
 }
