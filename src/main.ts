@@ -1,36 +1,30 @@
 import { bootstrapApplication } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
+import { enableProdMode, importProvidersFrom } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+
 import { AppComponent } from './app/app.component';
-import { enableProdMode } from '@angular/core';
+import { routes } from './app/app.routes'; // now points to the new routes file
 import { environment } from './environments/environment';
-import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { appConfig } from './app/app.config';
+
+import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
+import { provideAuth, getAuth } from '@angular/fire/auth';
+import { provideFirestore, getFirestore } from '@angular/fire/firestore';
 
 if (environment.production) {
   enableProdMode();
 }
 
-const firebaseApp = initializeApp(environment.firebase);
-const auth = getAuth(firebaseApp);
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideRouter(routes),
+    importProvidersFrom(BrowserModule),
+    provideFirebaseApp(() => initializeApp(environment.firebase)),
+    provideAuth(() => getAuth()),
+    provideFirestore(() => getFirestore()),
+  ]
+}).catch(err => console.error(err));
 
-// Create a promise that resolves once Firebase has determined the auth state
-const authStatePromise = new Promise<void>((resolve, reject) => {
-  const unsubscribe = onAuthStateChanged(
-    auth,
-    (user) => {
-      unsubscribe();
-      resolve();
-    },
-    (error) => reject(error)
-  );
-});
 
-// Only bootstrap Angular after the auth state is resolved
-authStatePromise
-  .then(() => {
-    bootstrapApplication(AppComponent, appConfig)
-      .catch(err => console.error(err));
-  })
-  .catch((err) => console.error('Error checking auth state:', err));
 
 

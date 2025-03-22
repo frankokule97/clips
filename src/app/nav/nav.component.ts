@@ -4,15 +4,13 @@ import {AuthService} from '../services/auth.service';
 import {AsyncPipe, NgIf} from '@angular/common';
 import { signOut } from '@angular/fire/auth';
 import { Auth } from '@angular/fire/auth';
+import {RouterLink} from '@angular/router';
 
 @Component({
   selector: 'app-nav',
-  imports: [
-    NgIf,
-    AsyncPipe
-  ],
+  imports: [NgIf, AsyncPipe, RouterLink],
   templateUrl: './nav.component.html',
-  styleUrl: './nav.component.css'
+  styleUrls: ['./nav.component.css']
 })
 export class NavComponent implements OnInit {
 
