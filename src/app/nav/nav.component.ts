@@ -4,22 +4,20 @@ import {AuthService} from '../services/auth.service';
 import {AsyncPipe, NgIf} from '@angular/common';
 import { signOut } from '@angular/fire/auth';
 import { Auth } from '@angular/fire/auth';
-import {RouterLink} from '@angular/router';
+import {RouterLink, RouterLinkActive} from '@angular/router';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-nav',
-  imports: [NgIf, AsyncPipe, RouterLink],
+  imports: [NgIf, AsyncPipe, RouterLink, RouterLinkActive],
   templateUrl: './nav.component.html',
   styleUrls: ['./nav.component.css']
 })
 export class NavComponent implements OnInit {
 
-  public isUserLoggedIn = false;
-
   constructor(
     public _modal: ModalService,
     public _auth: AuthService,
-    public _signOut: Auth,
   ) {}
 
   ngOnInit(): void {}
@@ -30,9 +28,5 @@ export class NavComponent implements OnInit {
     this._modal.toggleModal('auth');
   }
 
-  async logout($event: Event) {
-    $event.preventDefault();
-    await signOut(this._signOut);
-  }
 
 }

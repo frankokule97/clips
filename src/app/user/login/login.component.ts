@@ -58,6 +58,7 @@ export class LoginComponent implements OnInit {
 
     this.alertMsg = 'Success! You are now logged in.';
     this.alertColor = 'green';
+     this.loginForm.resetForm();
   }
 
 }
