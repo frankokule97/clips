@@ -16,24 +16,34 @@ export class HomeComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       const videoEl = this.backgroundVideo.nativeElement;
+      // Ensure the video is muted
+      videoEl.muted = true;
 
-      // Define a function to play the video
-      const playVideo = () => {
-        if (videoEl.paused) {
-          videoEl.play().catch(error => {
-            console.error('Error attempting to play video:', error);
-          });
-        }
-      };
+      videoEl.addEventListener('canplay', () => {
+        videoEl.play().catch(error => {
+          console.error('Error attempting to play video:', error);
+        });
+      });
 
-      // Listen for the video being ready to play
-      videoEl.addEventListener('canplay', playVideo);
-
-      // As a fallback, try playing after a slight delay (e.g., 500ms)
+      // Fallback delay if needed
       setTimeout(() => {
-        playVideo();
+        videoEl.play().catch(error => {
+          console.error('Error attempting to play video after delay:', error);
+        });
       }, 500);
     }
   }
+
+  playVideo(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      const videoEl = this.backgroundVideo.nativeElement;
+      videoEl.muted = true;
+      videoEl.play().catch(error => {
+        console.error('Error attempting to play video on user interaction:', error);
+      });
+    }
+  }
+
+
 }
 

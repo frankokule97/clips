@@ -7,6 +7,7 @@ import {InputComponent} from './input/input.component';
 import { ReactiveFormsModule } from '@angular/forms';
 import { NgxMaskDirective, provideNgxMask, provideEnvironmentNgxMask } from 'ngx-mask';
 import {AlertComponent} from './alert/alert.component';
+import {EventBlockerDirective} from './directives/event-blocker.directive';
 
 
 @NgModule({
@@ -21,7 +22,8 @@ import {AlertComponent} from './alert/alert.component';
     InputComponent,
     ReactiveFormsModule,
     NgxMaskDirective,
-    AlertComponent
+    AlertComponent,
+    EventBlockerDirective
   ],
   exports: [
     ModalComponent,
@@ -29,6 +31,7 @@ import {AlertComponent} from './alert/alert.component';
     TabsContainerComponent,
     TabComponent,
     NgxMaskDirective,
+    EventBlockerDirective,
   ],
   providers: [
     provideNgxMask(),
