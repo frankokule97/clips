@@ -1,12 +1,15 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, OnDestroy, ViewChild} from '@angular/core';
 import {EventBlockerDirective} from '../../shared/directives/event-blocker.directive';
 import {NgClass, NgIf, PercentPipe} from '@angular/common';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {InputComponent} from '../../shared/input/input.component';
-import {Storage, ref, uploadBytesResumable, listAll, getMetadata, getDownloadURL} from '@angular/fire/storage';
+import {Storage, ref, uploadBytesResumable, listAll, getMetadata, getDownloadURL, UploadTask} from '@angular/fire/storage';
 import { v4 as uuid } from 'uuid';
 import {AlertComponent} from '../../shared/alert/alert.component';
 import {getAuth} from '@angular/fire/auth';
+import {ClipService} from '../../services/clip.service';
+import {Router} from '@angular/router';
+import { serverTimestamp } from 'firebase/firestore';
 
 const MAX_USAGE = 4.99 * 1024 * 1024 * 1024;
 
@@ -24,7 +27,7 @@ const MAX_USAGE = 4.99 * 1024 * 1024 * 1024;
   templateUrl: './upload.component.html',
   styleUrls: ['./upload.component.css']
 })
-export class UploadComponent implements OnInit {
+export class UploadComponent implements OnDestroy {
 
   public isDragover = false;
   public file: File | null = null;
@@ -37,6 +40,7 @@ export class UploadComponent implements OnInit {
   public percentage = 0;
   public showPercentage = false;
   public notMP4File = false;
+  public uploadTask: UploadTask | null = null;
 
   public title = new FormControl('', {
     validators: [
@@ -48,18 +52,23 @@ export class UploadComponent implements OnInit {
 
   public uploadForm = new FormGroup({
     title: this.title,
-  })
+  });
 
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   constructor(
     private _storage: Storage,
+    private _clips: ClipService,
+    private _router: Router,
   ) {
   }
 
-  ngOnInit() {
-
+  ngOnDestroy() {
+    if (this.uploadTask) {
+      this.uploadTask.cancel();
+      console.log('Upload canceled due to component destruction.');
+    }
   }
 
   storeFile($event: Event) {
@@ -136,6 +145,7 @@ export class UploadComponent implements OnInit {
   }
 
   async uploadFile(): Promise<void> {
+    this.uploadForm.disable();
     this.showAlert = true;
     this.alertColor = 'blue';
     this.alertMsg = 'Please wait! Your clip is being uploaded.';
@@ -165,9 +175,9 @@ export class UploadComponent implements OnInit {
     const clipPath = `clips/${clipFileName}.mp4`;
     const storageRef = ref(this._storage, clipPath);
 
-    const uploadTask = uploadBytesResumable(storageRef, this.file);
+    this.uploadTask = uploadBytesResumable(storageRef, this.file);
 
-    uploadTask.on(
+    this.uploadTask.on(
       'state_changed',
       (snapshot) => {
         const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
@@ -179,29 +189,36 @@ export class UploadComponent implements OnInit {
         this.inSubmission = true;
         this.showPercentage = false;
       },
-      () => {
+       () => {
         // On successful upload, get the download URL and create the clip object.
-        getDownloadURL(storageRef)
+         getDownloadURL(storageRef)
           .then((downloadURL) => {
             const auth = getAuth();
             const currentUser = auth.currentUser;
             const clip = {
-              uid: currentUser ? currentUser.uid : null,
-              displayName: currentUser ? currentUser.displayName : 'Unknown',
-              title: this.title.value || 'No title provided',
+              uid: currentUser?.uid as string ,
+              displayName: currentUser?.displayName as string ,
+              title: this.title.value,
               fileName: `${clipFileName}.mp4`,
               url: downloadURL,
+              timestamp: serverTimestamp(),
             };
-
-            console.log('Clip object:', clip);
 
             this.alertColor = 'green';
             this.alertMsg = 'Success! Your clip is now ready to share with the world.';
             this.showPercentage = false;
 
-            // Optionally, you might want to send the clip object to your backend or store it in Firestore.
-          })
+            return this._clips.createClip(clip);
+
+          }).then((clipDocRef) => {
+           setTimeout(() => {
+             this._router.navigate([
+               'clip', clipDocRef.id
+             ])
+           }, 1000);
+         })
           .catch((error) => {
+            this.uploadForm.enable();
             console.error('Error getting download URL:', error);
             this.alertColor = 'red';
             this.alertMsg = 'Upload completed, but failed to retrieve file URL.';
