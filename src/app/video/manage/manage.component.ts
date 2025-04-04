@@ -5,6 +5,7 @@ import IClip from '../../models/clip.model';
 import {NgForOf} from '@angular/common';
 import {EditComponent} from '../edit/edit.component';
 import {ModalService} from '../../services/modal.service';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 @Component({
   selector: 'app-manage',
@@ -21,20 +22,24 @@ export class ManageComponent implements OnInit {
   public videoOrder = '1';
   public clips: IClip[] = [];
   public activeClip: IClip | null = null;
+  public sort$: BehaviorSubject<string>;
 
   constructor(
     private _router: Router,
     private _route: ActivatedRoute,
     private _clip: ClipService,
     private _modal: ModalService,
-  ) {}
+  ) {
+    this.sort$ = new BehaviorSubject(this.videoOrder);
+  }
 
   ngOnInit(): void {
     this._route.queryParams.subscribe((params: Params) => {
       this.videoOrder = params['sort'] === '2' ? params['sort'] : 1;
+      this.sort$.next(this.videoOrder);
     });
 
-    this._clip.getUserClips().subscribe(docs => {
+    this._clip.getUserClips(this.sort$).subscribe(docs => {
       this.clips = [];
 
       docs.forEach(doc => {

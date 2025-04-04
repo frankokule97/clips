@@ -1,6 +1,6 @@
 import {Component, ElementRef, OnDestroy, ViewChild} from '@angular/core';
 import {EventBlockerDirective} from '../../shared/directives/event-blocker.directive';
-import {NgClass, NgIf, PercentPipe} from '@angular/common';
+import {NgClass, NgForOf, NgIf, PercentPipe} from '@angular/common';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {InputComponent} from '../../shared/input/input.component';
 import {Storage, ref, uploadBytesResumable, listAll, getMetadata, getDownloadURL, UploadTask} from '@angular/fire/storage';
@@ -10,6 +10,8 @@ import {getAuth} from '@angular/fire/auth';
 import {ClipService} from '../../services/clip.service';
 import {Router} from '@angular/router';
 import { serverTimestamp } from 'firebase/firestore';
+import {FfmpegService} from '../../services/ffmpeg.service';
+import {SafeURLPipe} from '../pipes/safe-url.pipe';
 
 const MAX_USAGE = 4.99 * 1024 * 1024 * 1024;
 
@@ -22,7 +24,9 @@ const MAX_USAGE = 4.99 * 1024 * 1024 * 1024;
     ReactiveFormsModule,
     InputComponent,
     AlertComponent,
-    PercentPipe
+    PercentPipe,
+    SafeURLPipe,
+    NgForOf
   ],
   templateUrl: './upload.component.html',
   styleUrls: ['./upload.component.css']
@@ -41,6 +45,7 @@ export class UploadComponent implements OnDestroy {
   public showPercentage = false;
   public notMP4File = false;
   public uploadTask: UploadTask | null = null;
+  public screenshots: string[] = [];
 
   public title = new FormControl('', {
     validators: [
@@ -61,7 +66,9 @@ export class UploadComponent implements OnDestroy {
     private _storage: Storage,
     private _clips: ClipService,
     private _router: Router,
+    public _ffmpeg: FfmpegService
   ) {
+    this._ffmpeg.init();
   }
 
   ngOnDestroy() {
@@ -71,7 +78,7 @@ export class UploadComponent implements OnDestroy {
     }
   }
 
-  storeFile($event: Event) {
+   async storeFile($event: Event) {
     this.isDragover = false;
 
     this.file = ($event as DragEvent).dataTransfer?.files.item(0) ?? null;
@@ -82,6 +89,8 @@ export class UploadComponent implements OnDestroy {
       this.alertMsg = 'Upload failed! Only MP4 files under 2MB are allowed.';
       return;
     }
+
+    this.screenshots = await this._ffmpeg.getScreenshots(this.file);
 
     this.title.setValue(
       this.file.name.replace(/\.[̆^/.]+$/, '')
@@ -96,7 +105,7 @@ export class UploadComponent implements OnDestroy {
     this.fileInput.nativeElement.click();
   }
 
-  onFileSelected(event: Event): void {
+  async onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.selectedFile = input.files[0];
@@ -111,6 +120,7 @@ export class UploadComponent implements OnDestroy {
       );
       this.file = this.selectedFile;
       this.notMP4File = false;
+      this.screenshots = await this._ffmpeg.getScreenshots(this.file);
     }
 
     if(!this.file || this.file.type !== 'video/mp4') {

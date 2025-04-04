@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { Firestore, collection, addDoc, DocumentReference, CollectionReference, query, where, getDocs, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, DocumentReference, CollectionReference, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy } from '@angular/fire/firestore';
 import IClip from '../models/clip.model';
 import { clipConverter } from '../models/clip-converter';
-import { of, switchMap, map, from } from 'rxjs';
+import { of, switchMap, map, from, BehaviorSubject, combineLatest } from 'rxjs';
 import { Auth, authState } from '@angular/fire/auth';
 import { Storage, deleteObject, ref } from '@angular/fire/storage';
 
@@ -26,13 +26,18 @@ export class ClipService {
     return addDoc(clipsCollection, data);
   }
 
-  getUserClips() {
-    return authState(this._auth).pipe(
-      switchMap(user => {
+  getUserClips(sort$: BehaviorSubject<string>) {
+    return combineLatest([
+      authState(this._auth),
+      sort$
+    ]).pipe(
+      switchMap(values => {
+        const [user, sort] = values;
+
         if (!user) {
           return of([]);
         }
-        const q = query(this.collectionOfClips, where('uid', '==', user.uid));
+        const q = query(this.collectionOfClips, where('uid', '==', user.uid),orderBy('timestamp', sort === '1' ? 'desc' : 'asc'));
         return from(getDocs(q)).pipe(
           map(snapshot => snapshot.docs.map(doc => ({
             docId: doc.id,
